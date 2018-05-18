@@ -125,7 +125,6 @@ class MainWindow(QMainWindow):
         """.format(self.fgcolor)
 
         # set the Icon
-        #self.iconPress = QIcon("/home/qwang/Git/data-acquisition/icons/userManual.png")
         self.iconPress = QIcon("./userManual.png")
 
         self.initUI()
@@ -152,7 +151,7 @@ class MainWindow(QMainWindow):
 
     def setDisplayPanel(self):
         # set the mode radio button - visiable
-        self.modeLongButton = QRadioButton("long press")
+        self.modeLongButton = QRadioButton("long press ")
         self.modeLongButton.setFont(self.fontLab)
         self.modeShortButton = QRadioButton("short press")
         self.modeShortButton.setFont(self.fontLab)
@@ -164,7 +163,7 @@ class MainWindow(QMainWindow):
         self.IQRstatus = QProgressBar()
         self.IQRstatus.setFont(self.fontLab)
         self.IQRstatus.setStyleSheet(self.init_style)
-        self.IQRstatus.setFormat("on")
+        self.IQRstatus.setFormat("calibrating...")
         self.IQRstatus.setValue(100)
 
         # set the working status button
@@ -416,7 +415,7 @@ class MainWindow(QMainWindow):
             self.control.disconnect()
             sys.exit()
         else:
-            return
+            event.ignore()
 
 if __name__=='__main__':
     app = QApplication(sys.argv)
