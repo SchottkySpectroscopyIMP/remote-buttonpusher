@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         self.IQRstatus = QProgressBar()
         self.IQRstatus.setFont(self.fontLab)
         self.IQRstatus.setStyleSheet(self.init_style)
-        self.IQRstatus.setFormat("calibrating...")
+        self.IQRstatus.setFormat("waiting")
         self.IQRstatus.setValue(100)
 
         # set the working status button
