@@ -28,3 +28,5 @@ python3 /path/to/file/buttonPusher_Slave.py &
   (the rod move forward 20 steps, wait for 2 seconds then move backward to the starting point)
 - `debug` (hidden mode in **GUI**, shown with the key combination `ctrl-h`): used for calibrating the rod's position <br/>
   (the rod move with the input steps in the selected direction while the position shows the differences with the starting point)
+
+See [Wiki](https://github.com/SchottkySpectroscopyIMP/remote-buttonpusher/wiki/Mini-Button-Pusher) for more explanations.
