@@ -100,7 +100,7 @@ def statusChange(status):
 
 def loop():
     socketServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = "10.10.91.96"
+    host = "0.0.0.0" # "10.10.91.96" make the globel ip bind to port 5052
     port = 5052
     socketServer.bind((host, port))
     socketServer.listen(5)

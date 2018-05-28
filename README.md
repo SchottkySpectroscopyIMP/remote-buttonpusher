@@ -16,6 +16,16 @@ Add the following line above `exit 0` to the `/etc/rc.local` to execute the scri
 python3 /path/to/file/buttonPusher_Slave.py &
 ```
 
+Set the static ip of your `raspberry pi`. (system: *Debian-jessie*)
+Add the following line to the `/etc/dhcpcd.conf`
+```
+interface eth0
+    static ip_address=10.10.91.96/24
+    static routers=10.10.91.1
+    static domain_name_servers=10.10.91.1
+```
+See more for [*static ip setting <b>dhcpcd</b> vs <b>/etc/network/interfaces</b>*](https://raspberrypi.stackexchange.com/questions/39785/dhcpcd-vs-etc-network-interfaces)
+
 ## Usage
 1. connect all the devices, and boot the `raspberry pi`
 2. using **CLI**: launch the `buttonPusher_monitor.py`, then input as the explanation of the feedback. <br/>
