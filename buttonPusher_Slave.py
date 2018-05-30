@@ -19,15 +19,6 @@ Operation mode:
 import RPi.GPIO as GPIO
 import time, readline, subprocess,socket, signal, logging
 
-IN1 = 11
-IN2 = 12
-IN3 = 13
-IN4 = 15
-
-iqr_ip = "10.10.91.93"
-
-forward_seq = ['1000', '0100', '0010', '0001']
-reverse_seq = ['0001', '0010', '0100', '1000']
 
 logging.basicConfig(
         level       = logging.INFO,
@@ -37,6 +28,76 @@ logging.basicConfig(
         filemode    = 'a'
         )
 
+class ControlServer():
+    def __init__(self, IP, port, logger):
+        self.IP = IP
+        self.port = port
+        self.logger = logger
+        self.connect()
+    
+    def connect(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind((self.IP, self.port))
+        self.sock.listen(5)
+        logging.getLogger("root").info("socket server has established")
+
+    def disconnect(self):
+        self.sock.close()
+
+    def accept(self):
+        self.client, addr = self.sock.accept()
+        self.logger.info("build a connection with main server")
+
+    def write(self, cmd):
+        self.client.send(cmd.encode("utf-8"))
+
+    def read(self):
+        data = self.client.recv(4096)
+        return data.decode("utf-8")
+
+class PusherController(ControlServer):
+    def __init__(self):
+        super(PusherController, self).__init__("0.0.0.0", 5052, logging.getLogger("socket"))
+        self.IN1 = 11
+        self.IN2 = 12
+        self.IN3 = 13
+        self.IN4 = 15
+        
+        self.forward_seq = ['1000', '0100', '0010', '0001']
+        self.reverse_seq = ['0001', '0010', '0100', '1000']
+
+    def setup(self):
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.IN1, GPIO.OUT)
+        GPIO.setup(self.IN2, GPIO.OUT)
+        GPIO.setup(self.IN3, GPIO.OUT)
+        GPIO.setup(self.IN4, GPIO.OUT)
+
+    def destroy(self):
+        GPIO.cleanup()
+
+    def setStep(self, step):
+        GPIO.output(self.IN1, int(step[0]))
+        GPIO.output(self.IN2, int(step[1]))
+        GPIO.output(self.IN3, int(step[2]))
+        GPIO.output(self.IN4, int(step[3]))
+
+    def stop(self):
+        setStep('0000')
+
+    def forward(self, delay, steps):
+        for i in range(0, steps):
+            for step in self.forward_seq:
+                setStep(step)
+                time.sleep(delay)
+
+    def backward(self, delay, steps):
+        for i in range(0, steps):
+            for step in self.reverse_seq:
+                setStep(step)
+                time.sleep(delay)
+
 class killer():
     kill_now = False
     def __init__(self):
@@ -44,173 +105,139 @@ class killer():
     def exit(self, signum, frame):
         kill_now = True
 
+class powerCheck():
+    def __init__(self):
+        self.iqr_ip = "10.10.91.93"
 
-def setStep(step):
-    GPIO.output(IN1, int(step[0]))
-    GPIO.output(IN2, int(step[1]))
-    GPIO.output(IN3, int(step[2]))
-    GPIO.output(IN4, int(step[3]))
+    # ping IP of IQR to get the current status
+    def statusCheck(self):
+        with subprocess.Popen(['ping', '-c1', '-W1', self.iqr_ip], stdout=subprocess.PIPE)as p:
+            data = p.communicate()[0].decode("utf-8")
+            if "100% packet loss" in data:
+                return 0
+            else:
+                return 1
 
-def stop():
-    setStep('0000')
-
-def forward(delay, steps):
-    for i in range(0, steps):
-        for step in forward_seq:
-            setStep(step)
-            time.sleep(delay)
-
-def backward(delay, steps):
-    for i in range(0, steps):
-        for step in reverse_seq:
-            setStep(step)
-            time.sleep(delay)
-
-def setup():
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(IN1, GPIO.OUT)
-    GPIO.setup(IN2, GPIO.OUT)
-    GPIO.setup(IN3, GPIO.OUT)
-    GPIO.setup(IN4, GPIO.OUT)
-
-def destroy():
-    GPIO.cleanup()
+    # check if the IQR status change or not
+    def statusChange(self, status):
+        while True:
+            status_new = self.statusCheck()
+            if status_new == status:
+                status = status_new
+            else:
+                break
+            time.sleep(5)
 
 
-# ping IP of IQR to get the current status
-def statusCheck():
-    with subprocess.Popen(['ping', '-c1', '-W1', iqr_ip], stdout=subprocess.PIPE)as p:
-        data = p.communicate()[0].decode("utf-8")
-        if "100% packet loss" in data:
-            return 0
-        else:
-            return 1
-
-# check if the IQR status change or not
-def statusChange(status):
-    while True:
-        status_new = statusCheck()
-        if status_new == status:
-            status = status_new
-        else:
-            break
-        time.sleep(5)
-
-
-def loop():
-    socketServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = "0.0.0.0" # "10.10.91.96" make the globel ip bind to port 5052
-    port = 5052
-    socketServer.bind((host, port))
-    socketServer.listen(5)
-    logging.getLogger("root").info("socket server has established")
+if __name__=="__main__":
+    # initial the controller
+    control = PusherController()
+    iqrStatus = powerCheck()
+    control.setup()
 
     while True:
         killer_peacefull = False
         # start a new connection
-        clientSocket, addr = socketServer.accept()
-        #print("new connection")
-        logging.getLogger("socket").info("build a connection with main server")
+        control.accept()
         while True:
-            msg = clientSocket.recv(1024).decode("utf-8")
+            msg = control.read()
             if msg == "init":
                 break
-        iqr_status = statusCheck()
+        iqr_status = iqrStatus.statusCheck()
         if iqr_status:
             # power on
             logging.getLogger("IQR").info("power on")
-            clientSocket.send("11".encode("utf-8"))
+            control.write("11")
         else:
             # power off
             logging.getLogger("IQR").info("power off")
-            clientSocket.send("10".encode("utf-8"))
+            control.write("10")
 
         while True:
-            mode = clientSocket.recv(1024).decode("utf-8")
+            mode = control.read()
             if mode == "1":
                 # monitor the status of IQR
                 logging.getLogger("controller").info("mode 1: long press")
-                iqr_status = statusCheck()
+                iqr_status = iqrStatus.statusCheck()
                 # start press
                 logging.getLogger("controller").info("start press!")
-                clientSocket.send("1".encode("utf-8"))
-                forward(0.005, 20)
-                stop()
-                time.sleep(2)
-                backward(0.005, 20)
-                stop()
+                control.write("1")
+                control.forward(0.005, 20)
+                control.stop()
+                time.sleep(5)
+                control.backward(0.005, 20)
+                control.stop()
                 # stop press
                 logging.getLogger("controller").info("stop press!")
-                clientSocket.send("0".encode("utf-8"))
+                control.write("0")
                 time.sleep(5)
-                statusChange(iqr_status)
+                iqrStatus.statusChange(iqr_status)
                 if iqr_status:
                     # power off
                     logging.getLogger("IQR").info("power off")
-                    clientSocket.send("10".encode("utf-8"))
+                    control.write("10")
                 else:
                     # power on
                     logging.getLogger("IQR").info("power on")
-                    clientSocket.send("11".encode("utf-8"))
+                    control.write("11")
             elif mode == "2":
                 # monitor the status of IQR
                 logging.getLogger("controller").info("mode 2: short press")
-                iqr_status = statusCheck()
+                iqr_status = iqrStatus.statusCheck()
                 # start press
                 logging.getLogger("controller").info("start press!")
-                clientSocket.send("1".encode("utf-8"))
-                forward(0.005, 20)
-                stop()
+                control.write("1")
+                control.forward(0.005, 20)
+                control.stop()
                 time.sleep(0.5)
-                backward(0.005, 20)
-                stop()
+                control.backward(0.005, 20)
+                control.stop()
                 # stop press
                 logging.getLogger("controller").info("stop press!")
-                clientSocket.send("0".encode("utf-8"))
+                control.write("0")
                 time.sleep(5)
-                statusChange(iqr_status)
+                iqrStatus.statusChange(iqr_status)
                 if iqr_status:
                     # power off
                     logging.getLogger("IQR").info("power off")
-                    clientSocket.send("10".encode("utf-8"))
+                    control.write("10")
                 else:
                     # power on
                     logging.getLogger("IQR").info("power on")
-                    clientSocket.send("11".encode("utf-8"))
+                    control.write("11")
             elif mode == "3":
                 logging.getLogger("controller").info("mode 3: free mode")
-                inputOperation = clientSocket.recv(1024).decode("utf-8")
+                inputOperation = control.read()
                 operation, step = map(int, inputOperation.split(","))
                 if operation == 1:
                     logging.getLogger("controller").info("forward , step: {:d}".format(step))
                     logging.getLogger("controller").info("start press!")
-                    clientSocket.send("1".encode("utf-8"))
-                    forward(0.005, step)
-                    stop()
+                    control.write("1")
+                    control.forward(0.005, step)
+                    control.stop()
                     logging.getLogger("controller").info("stop press!")
-                    clientSocket.send("0".encode("utf-8"))
+                    control.write("0")
                 elif operation == 2:
                     logging.getLogger("controller").info("backward , step: {:d}".format(step))
                     logging.getLogger("controller").info("start press!")
-                    clientSocket.send("1".encode("utf-8"))
-                    backward(0.005, step)
-                    stop()
+                    control.write("1")
+                    control.backward(0.005, step)
+                    control.stop()
                     logging.getLogger("controller").info("stop press!")
-                    clientSocket.send("0".encode("utf-8"))
+                    control.write("0")
                 else:
                     pass
                 time.sleep(5)
                 # monitor the status of IQR
-                iqr_status = statusCheck()
+                iqr_status = iqrStatus.statusCheck()
                 if iqr_status:
                     # power on
                     logging.getLogger("IQR").info("power on")
-                    clientSocket.send("11".encode("utf-8"))
+                    control.write("11")
                 else:
                     # power off
                     logging.getLogger("IQR").info("power off")
-                    clientSocket.send("10".encode("utf-8"))
+                    control.write("10")
             elif not mode:
                 logging.getLogger("socket").info("close a connection with main server")
                 break
@@ -221,12 +248,9 @@ def loop():
                 pass
         if killer_peacefull:
             logging.getLogger("root").info("socket server close")
-            destroy()
+            control.destroy()
             break
-    socketServer.close()
+    control.close()
 
 
-if __name__=="__main__":
-    setup()
-    loop()
 
