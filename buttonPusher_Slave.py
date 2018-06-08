@@ -164,7 +164,7 @@ if __name__=="__main__":
                 control.write("1")
                 control.forward(0.005, 20)
                 control.stop()
-                time.sleep(5)
+                time.sleep(6)
                 control.backward(0.005, 20)
                 control.stop()
                 # stop press
