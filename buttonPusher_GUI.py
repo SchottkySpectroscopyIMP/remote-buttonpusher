@@ -235,7 +235,7 @@ class MainWindow(QMainWindow):
             if b.text() == "short press" and b.isChecked() == True:
                 self.statusBar().showMessage("short press selected")
                 self.workMode = "2"
-            if b.text() == "long press" and b.isChecked() == True:
+            if b.text() == "long press " and b.isChecked() == True:
                 self.statusBar().showMessage("long press selected")
                 self.workMode = "1"
         self.modeShortButton.toggled.connect(lambda:check_mode(self.modeShortButton))
