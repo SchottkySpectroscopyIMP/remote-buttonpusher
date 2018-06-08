@@ -84,18 +84,18 @@ class PusherController(ControlServer):
         GPIO.output(self.IN4, int(step[3]))
 
     def stop(self):
-        setStep('0000')
+        self.setStep('0000')
 
     def forward(self, delay, steps):
         for i in range(0, steps):
             for step in self.forward_seq:
-                setStep(step)
+                self.setStep(step)
                 time.sleep(delay)
 
     def backward(self, delay, steps):
         for i in range(0, steps):
             for step in self.reverse_seq:
-                setStep(step)
+                self.setStep(step)
                 time.sleep(delay)
 
 class killer():
@@ -250,7 +250,7 @@ if __name__=="__main__":
             logging.getLogger("root").info("socket server close")
             control.destroy()
             break
-    control.close()
+    control.disconnect()
 
 
 
