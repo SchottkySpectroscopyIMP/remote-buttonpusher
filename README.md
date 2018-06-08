@@ -32,11 +32,11 @@ See more for [*static ip setting <b>dhcpcd</b> vs <b>/etc/network/interfaces</b>
    using **GUI**: launch the `buttonPusher_GUI.py`, then choose the press mode and press the button. Using key combination `ctrl-w` or red cross on the right top corner will quit the controller.
 
 ## Press mode
-- `short press`: used for the normal operation of "power on" or "power off" <br/> 
+- `Turn on`: used for the operation of "power on" <br/> 
   (the rod move forward 20 steps, wait for 0.5 seconds then move backward to the starting point)
-- `long press`: used for the freezing status of `IQR-100` to shutdown <br/> 
+- `Turn off`: used for the operation of "power off" (including all the status of `IQR-100`, e.g. freezing, blue-screen, accessed by remote user or the normal status) <br/> 
   (the rod move forward 20 steps, wait for 2 seconds then move backward to the starting point)
-- `debug` (hidden mode in **GUI**, shown with the key combination `ctrl-h`): used for calibrating the rod's position <br/>
+- `step movement` (hidden mode in **GUI**, shown with the key combination `ctrl-h`): used for calibrating the rod's position <br/>
   (the rod move with the input steps in the selected direction while the position shows the differences with the starting point)
 
 See [Wiki](https://github.com/SchottkySpectroscopyIMP/remote-buttonpusher/wiki/Mini-Button-Pusher) for more explanations.
