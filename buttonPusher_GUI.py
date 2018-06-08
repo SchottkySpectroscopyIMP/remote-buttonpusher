@@ -151,9 +151,9 @@ class MainWindow(QMainWindow):
 
     def setDisplayPanel(self):
         # set the mode radio button - visiable
-        self.modeLongButton = QRadioButton("long press ")
+        self.modeLongButton = QRadioButton("turn off")
         self.modeLongButton.setFont(self.fontLab)
-        self.modeShortButton = QRadioButton("short press")
+        self.modeShortButton = QRadioButton("turn on ")
         self.modeShortButton.setFont(self.fontLab)
         self.modeShortButton.setChecked(True)
 
@@ -232,11 +232,11 @@ class MainWindow(QMainWindow):
     def buildConnection(self):
         # build connection with mode
         def check_mode(b):
-            if b.text() == "short press" and b.isChecked() == True:
-                self.statusBar().showMessage("short press selected")
+            if b.text() == "turn on " and b.isChecked() == True:
+                self.statusBar().showMessage("turn on the IQ recorder")
                 self.workMode = "2"
-            if b.text() == "long press " and b.isChecked() == True:
-                self.statusBar().showMessage("long press selected")
+            if b.text() == "turn off" and b.isChecked() == True:
+                self.statusBar().showMessage("turn off the IQ recorder")
                 self.workMode = "1"
         self.modeShortButton.toggled.connect(lambda:check_mode(self.modeShortButton))
         self.modeLongButton.toggled.connect(lambda:check_mode(self.modeLongButton))
